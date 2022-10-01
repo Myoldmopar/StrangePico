@@ -47,6 +47,17 @@ base = [
     "--------",#6
     "--------"]#7
 
+dax = [
+    #01234567####
+    "--------",#0
+    "--------",#1
+    "---88---",#2
+    "-----4--",#3
+    "----3---",#4
+    "---2----",#5
+    "--1-----",#6
+    "--------"]#7
+
 test = [
     #01234567####
     "01234567",#0
@@ -162,6 +173,7 @@ def run_scene() -> None:
 # the order you added it in this list of add_cel function calls.
 
 add_cel(test, 1)
+add_cel(dax, 2)
 add_cel(hi, 1)
 add_cel(mario_1, 0.7)
 add_cel(mario_2, 0.7)
