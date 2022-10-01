@@ -66,7 +66,7 @@ class StateManager:
         self.charge_requested = False    
         self.toggle_good_evil_requested = False
         self.abort_requested = False
-        self.timer = Timer()
+        self.timer = Timer(-1)
         self._initialize_button_monitors()
         self.evil = False
         self.debounce_time = 200  # ms
@@ -86,7 +86,6 @@ class StateManager:
 
     def handler_charge(self, _):
         """Handles charge button event, turns off monitor for debounce, sets the flag, and schedules an IRQ reset"""
-        print("In handler charge")
         self.charge_button.irq(handler=None)
         self.charge_requested = True
         self.timer.init(mode=Timer.ONE_SHOT, period=self.debounce_time, callback=self.initialize_charge_button)
@@ -97,7 +96,6 @@ class StateManager:
 
     def handler_trigger_good_evil(self, _):
         """Handles moral button event, turns off monitor for debounce, sets the flag, and schedules an IRQ reset"""
-        print("In moral button")
         self.good_evil_button.irq(handler=None)
         self.toggle_good_evil_requested = True
         self.timer.init(mode=Timer.ONE_SHOT, period=self.debounce_time, callback=self.initialize_good_evil_button)
@@ -108,7 +106,6 @@ class StateManager:
 
     def handler_should_abort(self, _):
         """Handles abort button event, turns off monitor for debounce, sets the flag, and schedules an IRQ reset"""
-        print("In abort button")
         self.off_button.irq(handler=None)
         self.abort_requested = True
         self.timer.init(mode=Timer.ONE_SHOT, period=self.debounce_time, callback=self.initialize_off_button)
@@ -150,7 +147,6 @@ class DoctorStrangeCostume:
     def run_main_loop(self) -> None:
         """Runs infinitely, operating the costume based on all flags.  State is checked often to handle events"""
         while True:
-            print(f"In main loop: charge = {self.state_manager.charge_requested}, moral = {self.state_manager.toggle_good_evil_requested}, abort = {self.state_manager.abort_requested}")
             should_restart_main_loop = False
             if self.state_manager.charge_requested:
                 self.state_manager.charge_requested = False  # and go ahead and run, but reset the flag for this request
@@ -180,7 +176,8 @@ class DoctorStrangeCostume:
                         int(amplitude + amplitude * sin(self.pixels[0].x - this_shift)),
                         self.state_manager.evil
                     )
-                    self.update()
+                    if iteration % 2 == 0:
+                        self.update()
 
                 # restart main loop if we should abort
                 if should_restart_main_loop:
@@ -238,9 +235,14 @@ class DoctorStrangeCostume:
 
     def turn_off(self) -> None:
         """Turns off the LED strip and clears flags"""
-        for i in range(0, self.num_leds):
-            self.pixels[i].set_pixel_intensity(0, self.state_manager.evil)
-        self.update()
+        num_iterations = 10
+        original_intensities = [x.intensity for x in self.pixels]
+        for iteration in range(num_iterations, -1, -1):
+            scaling_factor = iteration / num_iterations
+            for i in range(0, self.num_leds):
+                updated_intensity = original_intensities[i] * scaling_factor
+                self.pixels[i].set_pixel_intensity(updated_intensity, self.state_manager.evil)
+            self.update()
         self.state_manager.abort_requested = False
 
     def update(self) -> None:
